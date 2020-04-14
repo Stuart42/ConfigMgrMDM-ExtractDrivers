@@ -1,9 +1,14 @@
 ﻿#Import Reg Key to set cleanMgr options to clean unused drivers 
 # TODO: -Add switch to disable sending email notification
 #       -Build XML file for configuration
+# Import XML Configuration Settings
+[xml]$ConfigFile = Get-Content "config.xml"
 
-$RootPath = "\\FileServer\Share\Folder"
-$SendCompletionEmail = "True"
+$RootPath = $ConfigFile.Settings.RootPath
+if ($ConfigFile.Settings.CompletedNotification -eq "Email")
+{
+	$SendCompletionEmail = "True"
+}
 
 if (!(Test-Path -Path $RootPath))
 {
@@ -165,7 +170,7 @@ if ($SendCompletionEmail = "True")
 	Write-Verbose -Message "[INFO] Sending email report..."
 	
 	$SendEmailFrom = "Email From <noreply@example.com>"
-	$SendEmailTo = "Sender <sender@example.com>"
+	$SendEmailTo = "ASD Driver Team $($ConfigFile.Settings.EmailString)"
 	$SendEmailSubject = "Report - Driver Capture Completed"
 	$SendEmailBody = "Driver capture completed. The latest model captured is: $($CurrentModel.Manufacturer) $($CurrentModel.Model) for $OSName $OSArchitecture - Please import the driver package using the XML file in this folder: $ExtractDriverInfoXML"
 	$MailServer = "smtp.mailexample.nope"
