@@ -140,7 +140,14 @@ if ($ConfigFile.Settings.Compression -eq "Zip")
 {
 	# Compress contents of ExtractDriverDir
 	Write-Verbose -Message "[INFO] Creating DriverPackage.zip"
-	Compress-Archive -Path (Join-Path -Path $ExtractDriverRootDir -ChildPath "DriverPackage") -DestinationPath (Join-Path -path $ExtractDriverRootDir -ChildPath "DriverPackage.zip") -CompressionLevel Fastest -Force
+	$CompressedZipPath = Join-Path -Path $ExtractDriverRootDir -ChildPath "DriverPackage"
+	$DestinationZipPath = Join-Path -path $ExtractDriverRootDir -ChildPath "DriverPackage.zip"
+	Compress-Archive -Path $CompressedZipPath -DestinationPath $DestinationZipPath -CompressionLevel Fastest -Force
+	if ($DestinationZipPath)
+	{
+		Write-Verbose -Message "[INFO] Zip file created. Removing source.."
+		Remove-Item -Path $CompressedZipPath -Recurse -Force		
+	}
 }
 
 Write-Verbose -Message "[INFO] Writing ModelDetails.xml file..."
@@ -189,4 +196,7 @@ if ($SendCompletionEmail = "True")
 	Send-MailMessage -From $SendEmailFrom -To $SendEmailTo -Subject $SendEmailFrom -Body $SendEmailBody -Priority High -dno onSuccess, onFailure -SmtpServer $MailServer
 }
 
-Pause
+if ($ConfigFile.Settings.VerboseLogging -eq "True")
+{
+	Pause
+}

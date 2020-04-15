@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 <Settings>
     <RootPath>\\SERVERNAME\Share\Folder\NoTrailingSlash</RootPath>
+	<VerboseLogging>False</VerboseLogging>
     <CompletedNotification>Email</CompletedNotification>
 	<Compression>Zip</Compression>
 	<EmailToText>Driver Import Team</EmailToText>
