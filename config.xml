@@ -2,6 +2,11 @@
 <Settings>
     <RootPath>\\SERVERNAME\Share\Folder\NoTrailingSlash</RootPath>
     <CompletedNotification>Email</CompletedNotification>
-	<EmailString>email@domain.com</EmailString>
 	<Compression>Zip</Compression>
+	<EmailToText>Driver Import Team</EmailToText>
+	<EmailToAddress>email@domain.tld</EmailToAddress>
+	<EmailFromText>Driver Extraction Tool</EmailFromText>
+	<EmailFromAddress>drivers@domain.tld</EmailFromAddress>
+	<EmailSubject>Driver Capture Completed</EmailSubject>
+	<EmailServer>smtp.domain.tld</EmailServer>
 </Settings>

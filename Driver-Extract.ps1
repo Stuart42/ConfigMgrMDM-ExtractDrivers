@@ -123,7 +123,7 @@ if (!(Test-Path -Path $ExtractDriverDir))
 	New-Item -Path $ExtractDriverDir -ItemType directory
 }
 
-$ExtractDriverDir = "`"$ExtractDriverDir`"" 
+$ExtractDriverDir = "`"$ExtractDriverDir`""
 
 
 # Extract drivers and place in ExtractDriverDir
@@ -140,7 +140,7 @@ if ($ConfigFile.Settings.Compression -eq "Zip")
 {
 	# Compress contents of ExtractDriverDir
 	Write-Verbose -Message "[INFO] Creating DriverPackage.zip"
-	Compress-Archive -Path $ExtractDriverDir -DestinationPath (Join-Path -path $ExtractDriverRootDir -ChildPath "DriverPackage.zip") -CompressionLevel Fastest -Force
+	Compress-Archive -Path (Join-Path -Path $ExtractDriverRootDir -ChildPath "DriverPackage") -DestinationPath (Join-Path -path $ExtractDriverRootDir -ChildPath "DriverPackage.zip") -CompressionLevel Fastest -Force
 }
 
 Write-Verbose -Message "[INFO] Writing ModelDetails.xml file..."
@@ -178,13 +178,15 @@ if ($SendCompletionEmail = "True")
 {
 	Write-Verbose -Message "[INFO] Sending email report..."
 	
-	$SendEmailFrom = "Email From <noreply@example.com>"
-	$SendEmailTo = "Driver Team <$($ConfigFile.Settings.EmailString)>"
-	$SendEmailSubject = "Report - Driver Capture Completed"
+	$SendEmailFrom = "$($ConfigFile.Settings.EmailFromText) <$($ConfigFile.Settings.EmailFromAddress)>"
+	$SendEmailTo = "$($ConfigFile.Settings.EmailToText) <$($ConfigFile.Settings.EmailToAddress)>"
+	$SendEmailSubject = "$($ConfigFile.Settings.EmailSubject)"
 	$SendEmailBody = "Driver capture completed. The latest model captured is: $($CurrentModel.Manufacturer) $($CurrentModel.Model) for $OSName $OSArchitecture - Please import the driver package using the XML file in this folder: $ExtractDriverInfoXML"
-	$MailServer = "smtp.mailexample.nope"
+	$MailServer = "$($ConfigFile.Settings.EmailServer)"
 	
 	Write-Verbose -Message "[INFO] Sending email report to $SendEmailTo"
 	
 	Send-MailMessage -From $SendEmailFrom -To $SendEmailTo -Subject $SendEmailFrom -Body $SendEmailBody -Priority High -dno onSuccess, onFailure -SmtpServer $MailServer
 }
+
+Pause
