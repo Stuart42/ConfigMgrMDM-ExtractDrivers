@@ -2,7 +2,7 @@
 # TODO: -Add switch to disable sending email notification
 #       -Build XML file for configuration
 # Import XML Configuration Settings
-[xml]$ConfigFile = Get-Content "config.xml"
+[xml]$ConfigFile = Get-Content "$PSScriptRoot\config.xml"
 
 $RootPath = $ConfigFile.Settings.RootPath
 if ($ConfigFile.Settings.CompletedNotification -eq "Email")
@@ -112,19 +112,21 @@ if ($OSName -eq "Windows 10")
 
 
 # Format: Make Model - SKU - OSNameOsArchitecture
-$ExtractDriverDir = Join-Path -Path "$RootPath" -ChildPath "$ExtractMake $($CurrentModel.Model) - $ExtractSKU - $OSName$OSArchitecture"
-$ExtractDriverInfoXML = Join-Path -Path $ExtractDriverDir -ChildPath "ModelDetail.xml"
+$ExtractDriverRootDir = Join-Path -Path "$RootPath" -ChildPath "$ExtractMake $($CurrentModel.Model) - $ExtractSKU - $OSName$OSArchitecture"
+$ExtractDriverDir = Join-Path -Path "$ExtractDriverRootDir" -ChildPath "DriverPackage"
+$ExtractDriverInfoXML = Join-Path -Path $ExtractDriverRootDir -ChildPath "ModelDetail.xml"
 
 if (!(Test-Path -Path $ExtractDriverDir))
 {
 	# Folder does not exist, create it
+	New-Item -Path $ExtractDriverRootDir -ItemType directory
 	New-Item -Path $ExtractDriverDir -ItemType directory
 }
 
 $ExtractDriverDir = "`"$ExtractDriverDir`"" 
 
 
-
+# Extract drivers and place in ExtractDriverDir
 try
 {
 	Write-Verbose "[TRY] Attempting to extract drivers with dism..." -Verbose
@@ -134,6 +136,12 @@ catch [System.Exception] {
 	Write-Warning -Message "Failed to run dism"
 }
 
+if ($ConfigFile.Settings.Compression -eq "Zip")
+{
+	# Compress contents of ExtractDriverDir
+	Write-Verbose -Message "[INFO] Creating DriverPackage.zip"
+	Compress-Archive -Path $ExtractDriverDir -DestinationPath (Join-Path -path $ExtractDriverRootDir -ChildPath "DriverPackage.zip") -CompressionLevel Fastest -Force
+}
 
 Write-Verbose -Message "[INFO] Writing ModelDetails.xml file..."
 # Set XML Structure
@@ -165,12 +173,13 @@ $xmlWriter.WriteEndDocument()
 $xmlWriter.Flush()
 $xmlWriter.Close()
 
+
 if ($SendCompletionEmail = "True")
 {
 	Write-Verbose -Message "[INFO] Sending email report..."
 	
 	$SendEmailFrom = "Email From <noreply@example.com>"
-	$SendEmailTo = "ASD Driver Team $($ConfigFile.Settings.EmailString)"
+	$SendEmailTo = "Driver Team <$($ConfigFile.Settings.EmailString)>"
 	$SendEmailSubject = "Report - Driver Capture Completed"
 	$SendEmailBody = "Driver capture completed. The latest model captured is: $($CurrentModel.Manufacturer) $($CurrentModel.Model) for $OSName $OSArchitecture - Please import the driver package using the XML file in this folder: $ExtractDriverInfoXML"
 	$MailServer = "smtp.mailexample.nope"

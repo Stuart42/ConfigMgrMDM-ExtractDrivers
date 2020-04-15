@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 <Settings>
-    <RootPath>\\nbedsoftware\msi\ConfigMgr\Source\Drivers\SCCMTempDrivers\CustomDriverAutomation</RootPath>
+    <RootPath>\\SERVERNAME\Share\Folder\NoTrailingSlash</RootPath>
     <CompletedNotification>Email</CompletedNotification>
-	<EmailString>asd.SCCMdriverteam@gnb.ca</EmailString>
+	<EmailString>email@domain.com</EmailString>
+	<Compression>Zip</Compression>
 </Settings>
