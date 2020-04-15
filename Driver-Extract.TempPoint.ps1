@@ -1,14 +1,9 @@
 ﻿#Import Reg Key to set cleanMgr options to clean unused drivers 
 # TODO: -Add switch to disable sending email notification
 #       -Build XML file for configuration
-# Import XML Configuration Settings
-[xml]$ConfigFile = Get-Content "$PSScriptRoot\config.xml"
 
-$RootPath = $ConfigFile.Settings.RootPath
-if ($ConfigFile.Settings.CompletedNotification -eq "Email")
-{
-	$SendCompletionEmail = "True"
-}
+$RootPath = "\\FileServer\Share\Folder"
+$SendCompletionEmail = "True"
 
 if (!(Test-Path -Path $RootPath))
 {
@@ -16,6 +11,8 @@ if (!(Test-Path -Path $RootPath))
 	Write-Verbose -Message "[INFO] 2/2: Proceeding using $PSScriptRoot as staging directory, please move driver folder when complete"
 	$RootPath = $PSScriptRoot
 }
+
+
 
 Write-Verbose -Message "[INFO] Running cleanmgr.exe and cleaning up unused driver packages"
 New-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Device Driver Packages" -Name "StateFlags0003" -PropertyType Dword -Value 2 -Force
@@ -112,21 +109,19 @@ if ($OSName -eq "Windows 10")
 
 
 # Format: Make Model - SKU - OSNameOsArchitecture
-$ExtractDriverRootDir = Join-Path -Path "$RootPath" -ChildPath "$ExtractMake $($CurrentModel.Model) - $ExtractSKU - $OSName$OSArchitecture"
-$ExtractDriverDir = Join-Path -Path "$ExtractDriverRootDir" -ChildPath "DriverPackage"
-$ExtractDriverInfoXML = Join-Path -Path $ExtractDriverRootDir -ChildPath "ModelDetail.xml"
+$ExtractDriverDir = Join-Path -Path "$RootPath" -ChildPath "$ExtractMake $($CurrentModel.Model) - $ExtractSKU - $OSName$OSArchitecture"
+$ExtractDriverInfoXML = Join-Path -Path $ExtractDriverDir -ChildPath "ModelDetail.xml"
 
 if (!(Test-Path -Path $ExtractDriverDir))
 {
 	# Folder does not exist, create it
-	New-Item -Path $ExtractDriverRootDir -ItemType directory
 	New-Item -Path $ExtractDriverDir -ItemType directory
 }
 
-$ExtractDriverDir = "`"$ExtractDriverDir`""
+$ExtractDriverDir = "`"$ExtractDriverDir`"" 
 
 
-# Extract drivers and place in ExtractDriverDir
+
 try
 {
 	Write-Verbose "[TRY] Attempting to extract drivers with dism..." -Verbose
@@ -136,19 +131,6 @@ catch [System.Exception] {
 	Write-Warning -Message "Failed to run dism"
 }
 
-if ($ConfigFile.Settings.Compression -eq "Zip")
-{
-	# Compress contents of ExtractDriverDir
-	Write-Verbose -Message "[INFO] Creating DriverPackage.zip"
-	$CompressedZipPath = Join-Path -Path $ExtractDriverRootDir -ChildPath "DriverPackage"
-	$DestinationZipPath = Join-Path -path $ExtractDriverRootDir -ChildPath "DriverPackage.zip"
-	Compress-Archive -Path $CompressedZipPath -DestinationPath $DestinationZipPath -CompressionLevel Fastest -Force
-	if ($DestinationZipPath)
-	{
-		Write-Verbose -Message "[INFO] Zip file created. Removing source.."
-		Remove-Item -Path $CompressedZipPath -Recurse -Force		
-	}
-}
 
 Write-Verbose -Message "[INFO] Writing ModelDetails.xml file..."
 # Set XML Structure
@@ -180,23 +162,17 @@ $xmlWriter.WriteEndDocument()
 $xmlWriter.Flush()
 $xmlWriter.Close()
 
-
 if ($SendCompletionEmail = "True")
 {
 	Write-Verbose -Message "[INFO] Sending email report..."
 	
-	$SendEmailFrom = "$($ConfigFile.Settings.EmailFromText) <$($ConfigFile.Settings.EmailFromAddress)>"
-	$SendEmailTo = "$($ConfigFile.Settings.EmailToText) <$($ConfigFile.Settings.EmailToAddress)>"
-	$SendEmailSubject = "$($ConfigFile.Settings.EmailSubject)"
+	$SendEmailFrom = "Email From <noreply@example.com>"
+	$SendEmailTo = "Sender <sender@example.com>"
+	$SendEmailSubject = "Report - Driver Capture Completed"
 	$SendEmailBody = "Driver capture completed. The latest model captured is: $($CurrentModel.Manufacturer) $($CurrentModel.Model) for $OSName $OSArchitecture - Please import the driver package using the XML file in this folder: $ExtractDriverInfoXML"
-	$MailServer = "$($ConfigFile.Settings.EmailServer)"
+	$MailServer = "smtp.mailexample.nope"
 	
 	Write-Verbose -Message "[INFO] Sending email report to $SendEmailTo"
 	
 	Send-MailMessage -From $SendEmailFrom -To $SendEmailTo -Subject $SendEmailFrom -Body $SendEmailBody -Priority High -dno onSuccess, onFailure -SmtpServer $MailServer
-}
-
-if ($ConfigFile.Settings.VerboseLogging -eq "True")
-{
-	Pause
 }
